@@ -1,0 +1,99 @@
+Step-by-Step KIND Cluster Setup Guide
+1. Install KIND and kubectl
+Install KIND
+bash
+# Download and install KIND (Linux/macOS)
+curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.20.0/kind-linux-amd64
+chmod +x ./kind
+sudo mv ./kind /usr/local/bin/kind
+
+# Verify installation
+kind --version
+Install kubectl
+bash
+# Install kubectl (Linux)
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+chmod +x kubectl
+sudo mv kubectl /usr/local/bin/
+
+# Verify installation
+kubectl version --client
+2. Create a KIND Cluster
+Create a kind-config.yaml file
+bash
+cat <<EOF > kind-config.yaml
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+  - role: control-plane
+    image: kindest/node:v1.27.3  # Change version if needed
+  - role: worker
+    image: kindest/node:v1.27.3
+  - role: worker
+    image: kindest/node:v1.27.3
+EOF
+Create the Cluster
+bash
+kind create cluster --config kind-config.yaml --name my-kind-cluster
+Verify the Cluster
+bash
+kubectl get nodes
+kubectl cluster-info
+3. Access the Cluster
+Check Cluster Access
+bash
+kubectl get pods -A
+4. Set Up Kubernetes Dashboard
+Deploy the Dashboard
+bash
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
+Create an Admin User
+bash
+cat <<EOF > dashboard-admin-user.yml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: admin-user
+  namespace: kubernetes-dashboard
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: admin-user
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: admin-user
+  namespace: kubernetes-dashboard
+EOF
+Apply Admin User Configuration
+bash
+kubectl apply -f dashboard-admin-user.yml
+Get the Access Token
+bash
+kubectl -n kubernetes-dashboard create token admin-user
+Copy the token (you'll need it to log in).
+
+Access the Dashboard
+Start the proxy:
+
+bash
+kubectl proxy
+Open the Dashboard in your browser:
+
+text
+http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/
+Log in using the token you copied earlier.
+
+5. Delete the Cluster
+bash
+kind delete cluster --name my-kind-cluster
+6. Notes
+Multiple Clusters: Use different --name values to create multiple clusters.
+
+Custom Kubernetes Version: Change image: kindest/node:v1.27.3 in kind-config.yaml.
+
+Ephemeral Clusters: KIND clusters are temporary and will be lost if Docker restarts.
