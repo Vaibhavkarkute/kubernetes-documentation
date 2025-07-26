@@ -1,55 +1,56 @@
-Step-by-Step KIND Cluster Setup Guide
-1. Install KIND and kubectl
-Install KIND
-bash
-# Download and install KIND (Linux/macOS)
-curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.20.0/kind-linux-amd64
-chmod +x ./kind
-sudo mv ./kind /usr/local/bin/kind
+# KIND Cluster Setup Guide
 
-# Verify installation
-kind --version
-Install kubectl
-bash
-# Install kubectl (Linux)
-curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-chmod +x kubectl
-sudo mv kubectl /usr/local/bin/
+## 1. Installing KIND and kubectl
+Install KIND and kubectl using the provided [script](https://github.com/LondheShubham153/kubestarter/blob/main/kind-cluster/install.sh):
 
-# Verify installation
-kubectl version --client
-2. Create a KIND Cluster
-Create a kind-config.yaml file
-bash
-cat <<EOF > kind-config.yaml
+## 2. Setting Up the KIND Cluster
+Create a kind-config.yaml file:
+
+```yaml
+
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
   - role: control-plane
-    image: kindest/node:v1.27.3  # Change version if needed
+    image: kindest/node:v1.33.1
   - role: worker
-    image: kindest/node:v1.27.3
+    image: kindest/node:v1.33.1
   - role: worker
-    image: kindest/node:v1.27.3
-EOF
-Create the Cluster
-bash
-kind create cluster --config kind-config.yaml --name my-kind-cluster
-Verify the Cluster
-bash
+    image: kindest/node:v1.33.1
+```
+Create the cluster using the configuration file:
+
+```bash
+
+kind create cluster --config kind-config.yaml --name tws-kind-cluster
+```
+Verify the cluster:
+
+```bash
+
 kubectl get nodes
 kubectl cluster-info
-3. Access the Cluster
-Check Cluster Access
-bash
-kubectl get pods -A
-4. Set Up Kubernetes Dashboard
+```
+## 3. Accessing the Cluster
+Use kubectl to interact with the cluster:
+```bash
+
+kubectl cluster-info
+```
+
+
+## 4. Setting Up the Kubernetes Dashboard
 Deploy the Dashboard
-bash
+Apply the Kubernetes Dashboard manifest:
+```bash
+
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
+```
 Create an Admin User
-bash
-cat <<EOF > dashboard-admin-user.yml
+Create a dashboard-admin-user.yml file with the following content:
+
+```yaml
+
 apiVersion: v1
 kind: ServiceAccount
 metadata:
@@ -68,32 +69,47 @@ subjects:
 - kind: ServiceAccount
   name: admin-user
   namespace: kubernetes-dashboard
-EOF
-Apply Admin User Configuration
-bash
+```
+Apply the configuration:
+
+```bash
+
 kubectl apply -f dashboard-admin-user.yml
+```
 Get the Access Token
-bash
+Retrieve the token for the admin-user:
+
+```bash
+
 kubectl -n kubernetes-dashboard create token admin-user
-Copy the token (you'll need it to log in).
+```
+Copy the token for use in the Dashboard login.
 
 Access the Dashboard
-Start the proxy:
+Start the Dashboard using kubectl proxy:
 
-bash
+```bash
+
 kubectl proxy
+```
 Open the Dashboard in your browser:
 
-text
+```bash
+
 http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/
-Log in using the token you copied earlier.
+```
+Use the token from the previous step to log in.
 
-5. Delete the Cluster
-bash
+## 5. Deleting the Cluster
+Delete the KIND cluster:
+```bash
+
 kind delete cluster --name my-kind-cluster
-6. Notes
-Multiple Clusters: Use different --name values to create multiple clusters.
+```
 
-Custom Kubernetes Version: Change image: kindest/node:v1.27.3 in kind-config.yaml.
+## 6. Notes
 
-Ephemeral Clusters: KIND clusters are temporary and will be lost if Docker restarts.
+Multiple Clusters: KIND supports multiple clusters. Use unique --name for each cluster.
+Custom Node Images: Specify Kubernetes versions by updating the image in the configuration file.
+Ephemeral Clusters: KIND clusters are temporary and will be lost if Docker is restarted.
+
